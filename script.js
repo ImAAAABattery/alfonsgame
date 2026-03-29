@@ -7,7 +7,7 @@ const BLOCK_SIZE = 30;
 
 ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
 
-// Standard Tetris shapes
+// Standard shapes
 const SHAPES = {
     I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
     J: [[2,0,0],[2,2,2],[0,0,0]],
@@ -18,7 +18,6 @@ const SHAPES = {
     Z: [[7,7,0],[0,7,7],[0,0,0]]
 };
 
-// Colors for blocks (index corresponds to number in matrix)
 const COLORS = [
     null,
     '#0DC2FF', // I
@@ -30,119 +29,78 @@ const COLORS = [
     '#F538FF'  // Z
 ];
 
-// Game state
 let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
-let score = 0, level = 1, linesCleared = 0;
-let dropCounter = 0;
-let dropInterval = 300; // faster start
-let lastTime = 0;
+let score=0, level=1, linesCleared=0;
+let dropCounter=0;
+let dropInterval=200; // faster
+let lastTime=0;
 
-// Player
 const player = {
-    pos: {x: 3, y: 0},
-    matrix: createPiece(randomShape())
+    pos: {x:3,y:0},
+    matrix:createPiece(randomShape())
 };
 
-function createPiece(type){
-    return SHAPES[type];
-}
+function createPiece(type){ return SHAPES[type]; }
+function randomShape(){ const keys=Object.keys(SHAPES); return keys[Math.floor(Math.random()*keys.length)]; }
 
-function randomShape(){
-    const keys = Object.keys(SHAPES);
-    return keys[Math.floor(Math.random()*keys.length)];
-}
-
-// Draw single block
 function drawBlock(x,y,value){
     if(value){
         ctx.fillStyle = COLORS[value];
         ctx.fillRect(x,y,1,1);
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = 0.05;
+        ctx.lineWidth=0.05;
         ctx.strokeRect(x,y,1,1);
     }
 }
 
-// Draw board and current piece
 function draw(){
     ctx.clearRect(0,0,COLS,ROWS);
-    board.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            drawBlock(x,y,value);
-        });
-    });
-    player.matrix.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            if(value) drawBlock(x + player.pos.x, y + player.pos.y, value);
-        });
-    });
+    board.forEach((row,y)=>row.forEach((value,x)=>drawBlock(x,y,value)));
+    player.matrix.forEach((row,y)=>row.forEach((value,x)=>{if(value) drawBlock(x+player.pos.x,y+player.pos.y,value)}));
 }
 
-// Merge piece into board
 function merge(){
-    player.matrix.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            if(value) board[y + player.pos.y][x + player.pos.x] = value;
-        });
-    });
+    player.matrix.forEach((row,y)=>row.forEach((value,x)=>{if(value) board[y+player.pos.y][x+player.pos.x]=value}));
 }
 
-// Check collision
 function collide(){
-    const m = player.matrix;
-    const o = player.pos;
+    const m=player.matrix; const o=player.pos;
     for(let y=0;y<m.length;y++){
         for(let x=0;x<m[y].length;x++){
-            if(m[y][x] && (board[y+o.y] && board[y+o.y][x+o.x])!==0){
-                return true;
-            }
+            if(m[y][x] && (board[y+o.y] && board[y+o.y][x+o.x])!==0) return true;
         }
     }
     return false;
 }
 
-// Clear completed rows with smooth flash animation
 function sweep(){
-    let rowCount = 0;
-    outer: for(let y=board.length-1; y>=0; y--){
-        for(let x=0; x<COLS; x++){
-            if(board[y][x] === 0) continue outer;
-        }
+    let rowCount=0;
+    outer: for(let y=board.length-1;y>=0;y--){
+        for(let x=0;x<COLS;x++){ if(board[y][x]===0) continue outer; }
         rowCount++;
-        // Flash effect before deleting
-        for(let i=0;i<6;i++){
-            setTimeout(()=>{
-                board[y].forEach((_,x)=>board[y][x] = i%2 ? 0 : 8); // temporary flash color
-            }, i*50);
+        for(let i=0;i<6;i++){ // smooth flash animation
+            setTimeout(()=>board[y].forEach((_,x)=>board[y][x]=i%2?0:8),i*50);
         }
         const row = board.splice(y,1)[0].fill(0);
-        board.unshift(row);
-        y++;
+        board.unshift(row); y++;
     }
     if(rowCount){
-        score += rowCount * 100;
-        linesCleared += rowCount;
-        if(linesCleared % 10 === 0) level++;
-        dropInterval = Math.max(50, 300 - (level-1)*30); // faster drop
-        document.getElementById('score').textContent = score;
-        document.getElementById('level').textContent = level;
-        document.getElementById('lines').textContent = linesCleared;
+        score+=rowCount*100;
+        linesCleared+=rowCount;
+        if(linesCleared%10===0) level++;
+        dropInterval = Math.max(50, 200 - (level-1)*20);
+        document.getElementById('score').textContent=score;
+        document.getElementById('level').textContent=level;
+        document.getElementById('lines').textContent=linesCleared;
     }
 }
 
-// Rotate piece
 function rotate(dir){
-    const m = player.matrix;
-    for(let y=0;y<m.length;y++){
-        for(let x=0;x<y;x++){
-            [m[x][y], m[y][x]] = [m[y][x], m[x][y]];
-        }
-    }
-    if(dir>0) m.forEach(row=>row.reverse());
-    else m.reverse();
+    const m=player.matrix;
+    for(let y=0;y<m.length;y++){ for(let x=0;x<y;x++){ [m[x][y],m[y][x]]=[m[y][x],m[x][y]]; } }
+    if(dir>0) m.forEach(row=>row.reverse()); else m.reverse();
 }
 
-// Drop player piece
 function playerDrop(){
     player.pos.y++;
     if(collide()){
@@ -154,39 +112,31 @@ function playerDrop(){
     dropCounter=0;
 }
 
-// Reset player
 function resetPlayer(){
-    player.matrix = createPiece(randomShape());
-    player.pos.y = 0;
-    player.pos.x = Math.floor(COLS/2) - Math.floor(player.matrix[0].length/2);
+    player.matrix=createPiece(randomShape());
+    player.pos.y=0;
+    player.pos.x=Math.floor(COLS/2-Math.floor(player.matrix[0].length/2));
     if(collide()){
         board.forEach(row=>row.fill(0));
-        score=0; level=1; linesCleared=0;
-        dropInterval=300;
-        document.getElementById('score').textContent = score;
-        document.getElementById('level').textContent = level;
-        document.getElementById('lines').textContent = linesCleared;
+        score=0; level=1; linesCleared=0; dropInterval=200;
+        document.getElementById('score').textContent=score;
+        document.getElementById('level').textContent=level;
+        document.getElementById('lines').textContent=linesCleared;
         alert("Game Over! Alfons resets the board.");
     }
 }
 
-// Move piece
-function playerMove(dir){
-    player.pos.x += dir;
-    if(collide()) player.pos.x -= dir;
-}
+function playerMove(dir){ player.pos.x+=dir; if(collide()) player.pos.x-=dir; }
 
-// Game loop
 function update(time=0){
-    const deltaTime = time - lastTime;
-    lastTime = time;
-    dropCounter += deltaTime;
-    if(dropCounter > dropInterval) playerDrop();
+    const deltaTime=time-lastTime; lastTime=time;
+    dropCounter+=deltaTime;
+    if(dropCounter>dropInterval) playerDrop();
     draw();
     requestAnimationFrame(update);
 }
 
-// Key input
+// Desktop key input
 document.addEventListener('keydown', e=>{
     if(e.key==='ArrowLeft') playerMove(-1);
     if(e.key==='ArrowRight') playerMove(1);
@@ -194,5 +144,24 @@ document.addEventListener('keydown', e=>{
     if(e.key==='ArrowUp') rotate(1);
 });
 
-// Start
+// Mobile controls
+function setupMobileControls(){
+    const controls = ['leftBtn','rightBtn','rotateBtn','dropBtn'];
+    controls.forEach(id=>{
+        const btn=document.getElementById(id);
+        btn.addEventListener('touchstart', e=>{e.preventDefault();});
+    });
+
+    document.getElementById('leftBtn').addEventListener('click', ()=>playerMove(-1));
+    document.getElementById('rightBtn').addEventListener('click', ()=>playerMove(1));
+    document.getElementById('rotateBtn').addEventListener('click', ()=>rotate(1));
+    document.getElementById('dropBtn').addEventListener('click', ()=>playerDrop());
+}
+
+// Detect mobile screen
+if(window.innerWidth <= 600){
+    document.getElementById('mobileControls').classList.remove('hidden');
+    setupMobileControls();
+}
+
 update();
