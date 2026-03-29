@@ -1,21 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alfons Tetris</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alfons Tetris</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1 id="title">🎮 Alfons Tetris 🎮</h1>
-    <div id="gameContainer">
-        <canvas id="tetrisCanvas" width="300" height="600"></canvas>
-        <div id="scorePanel">
-            <p>Score: <span id="score">0</span></p>
-            <p>Level: <span id="level">1</span></p>
-            <p>Lines: <span id="lines">0</span></p>
-        </div>
+<h1 id="title">🎮 Alfons Tetris 🎮</h1>
+<div id="gameContainer">
+    <canvas id="tetrisCanvas" width="300" height="600"></canvas>
+    <div id="scorePanel">
+        <p>Score: <span id="score">0</span></p>
+        <p>Level: <span id="level">1</span></p>
+        <p>Lines: <span id="lines">0</span></p>
     </div>
-    <script src="script.js"></script>
+</div>
+
+<!-- Mobile controls -->
+<div id="mobileControls" class="hidden">
+    <button id="leftBtn">◀️</button>
+    <button id="rotateBtn">🔄</button>
+    <button id="rightBtn">▶️</button>
+    <button id="dropBtn">⬇️</button>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
